@@ -6,5 +6,5 @@ edition = "2021"
 [dependencies]
 generic-camera = { path = "../../generic_camera" }
 image = "0.25.2"
-refimage = { path = "../../refimage", features = ["image", "fitsio"]  }
+refimage = { version = "0.5", features = ["rayon", "serde_flate", "image", "fitsio"]  }
 serde_json = "1.0.128"

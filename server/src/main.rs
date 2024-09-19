@@ -3,12 +3,12 @@ use std::net::TcpListener;
 use core::str;
 use std::thread;
 use std::io::prelude::*;
-use refimage::{DynamicImageData, GenericImage, GenericImageOwned};
+use refimage::{DynamicImageData, GenericImage};
 use std::time::SystemTime;
 use image::open;
 
 // Uses generic_camera to create a test image that will be serialized and sent to a client on demand.
-fn generate_test_image() -> GenericImageOwned {
+fn generate_test_image() -> String {
     let img = open("./res/Grass.png").expect("Could not load image");
     let img = DynamicImageData::try_from(img).expect("Could not convert image");
 
@@ -18,18 +18,7 @@ fn generate_test_image() -> GenericImageOwned {
     let _ = img.insert_key("CAMERA", ("Rust Test Program", "Name of the camera used to capture the image"));
     
     let json = serde_json::to_string(&img).unwrap(); // serialize the image to JSON
-    let rimg: GenericImage = serde_json::from_str(&json).unwrap(); // deserialize to GenericImage
-    assert_eq!(&img, &rimg); // Confirm that deserialized image matches the original
-    let rimg: GenericImageOwned = rimg.into(); // convert to GenericImageOwned
-
-    // let ownedjson = serde_json::to_string(&rimg).unwrap(); // serialize the image to JSON
-    // assert_eq!(&json, &ownedjson); // the two representations should be identical
-
-    rimg
-}
-
-fn serialize_image(img: GenericImageOwned) -> String {
-    serde_json::to_string(&img).unwrap() // serialize the image to JSON
+    json
 }
 
 fn main() {
@@ -60,10 +49,8 @@ fn main() {
                 else if rx_str.starts_with("SEND IMAGE TEST") {
                     println!("Sending image test.");
 
-                    let img = generate_test_image();
-                    let simg = serialize_image(img);
                     // Serialize and send...
-                    stream.write_all(simg.as_bytes()).unwrap();
+                    stream.write_all(generate_test_image().as_bytes()).unwrap();
                 }
                 else if rx_str.starts_with("END COMMS") {
                     println!("Ending communication with client.");

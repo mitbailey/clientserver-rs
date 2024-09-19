@@ -2,7 +2,8 @@ use core::str;
 use std::io::prelude::*;
 use std::net::TcpStream;
 
-use refimage::{FitsWrite, GenericImage, GenericImageOwned};
+use image::DynamicImage;
+use refimage::{FitsCompression, FitsWrite, GenericImageOwned};
 use std::path::Path;
 
 fn main() -> std::io::Result<()> {
@@ -31,12 +32,13 @@ fn main() -> std::io::Result<()> {
     println!("Rxed Msg (Exp. SEND IMAGE TEST): {}", str::from_utf8(&buffer).unwrap());
 
     // RX and deserialize...
-    let rimg: GenericImage = serde_json::from_str(str::from_utf8(&buffer).unwrap().trim_end_matches(char::from(0))).unwrap(); // Deserialize to generic image.
-    let rimg: GenericImageOwned = rimg.into(); // convert to GenericImageOwned
+    let rimg: GenericImageOwned = serde_json::from_str(str::from_utf8(&buffer).unwrap().trim_end_matches(char::from(0))).unwrap(); // Deserialize to generic image.
     println!("{:?}", rimg.get_metadata());
     println!("{:?}", rimg.get_image());
-
-    rimg.write_fits(Path::new("received.fits"), refimage::FitsCompression::None, true).unwrap();
+    let img: DynamicImage = rimg.get_image().clone().try_into().expect("Could not convert image");
+    img.save("received.png").unwrap();
+    // let rimg = rimg.into_luma().expect("Could not convert to luma");
+    rimg.write_fits(Path::new("received.fits"), FitsCompression::None, true).unwrap();
 
     // Complete communications with server.
     stream.write_all(b"END COMMS")?;
